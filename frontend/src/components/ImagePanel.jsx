@@ -77,24 +77,25 @@ function ImagePanel({ source }) {
             </select>
           </div>
 
-          {/* RGB */}
-          {showRGB && source.has_rgb && (
-            <div className="mb-3">
-              <div className="flex justify-center">
-                <img
-                  src={getRGBUrl(source.id, size)}
-                  alt="RGB"
-                  className="w-48 h-48 object-cover rounded border border-orange-200 dark:border-orange-800"
-                />
+          {/* RGB + Individual bands in one scrollable row */}
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {/* RGB */}
+            {showRGB && source.has_rgb && (
+              <div className="flex-shrink-0 border border-orange-200 dark:border-orange-800 rounded p-2">
+                <div className="flex justify-center">
+                  <img
+                    src={getRGBUrl(source.id, size)}
+                    alt="RGB"
+                    className="w-40 h-40 object-cover rounded border border-orange-100 dark:border-orange-900"
+                  />
+                </div>
+                <div className="text-xs text-center text-orange mt-1">RGB</div>
               </div>
-              <div className="text-xs text-center text-orange mt-1">RGB Composite</div>
-            </div>
-          )}
+            )}
 
-          {/* Individual bands */}
-          <div className="grid grid-cols-3 gap-3">
+            {/* Individual bands */}
             {bands.map(band => (
-              <div key={band} className="border border-orange-200 dark:border-orange-800 rounded p-2">
+              <div key={band} className="flex-shrink-0 border border-orange-200 dark:border-orange-800 rounded p-2">
                 <button
                   onClick={() => toggleBand(band)}
                   className="w-full text-xs font-medium text-orange hover:underline text-left"

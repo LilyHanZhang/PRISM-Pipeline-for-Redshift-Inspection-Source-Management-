@@ -141,6 +141,17 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
 
   const range = FILTER_RANGES[filter]
 
+  // Calculate y-axis range using percentile clipping to handle outliers
+  const fluxValues = spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f))
+  let yRange = null
+  if (fluxValues.length > 0) {
+    const sorted = [...fluxValues].sort((a, b) => a - b)
+    const p1 = sorted[Math.floor(sorted.length * 0.01)]
+    const p99 = sorted[Math.floor(sorted.length * 0.99)]
+    const padding = (p99 - p1) * 0.1
+    yRange = [p1 - padding, p99 + padding]
+  }
+
   return (
     <div className="panel-green rounded-lg border p-3">
       <h3 className="font-semibold text-green mb-2">
@@ -156,7 +167,11 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
             gridcolor: '#e5e7eb',
             range: [range.min, range.max],
           },
-          yaxis: { title: 'Flux', gridcolor: '#e5e7eb' },
+          yaxis: { 
+            title: 'Flux', 
+            gridcolor: '#e5e7eb',
+            ...(yRange && { range: yRange }),
+          },
           shapes,
           annotations,
           paper_bgcolor: 'transparent',
