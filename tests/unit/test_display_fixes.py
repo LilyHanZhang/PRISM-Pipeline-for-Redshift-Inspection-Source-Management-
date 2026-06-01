@@ -334,24 +334,6 @@ class TestRGBComposite:
         assert img.size[1] > 0
 
 
-class TestCacheDirectory:
-    def test_cache_path_uses_project_dir(self, monkeypatch, tmp_path):
-        """Test that cache path uses project directory, not DATA_ROOT."""
-        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
-        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
-
-        import backend.config
-        import backend.routers.images
-        importlib.reload(backend.config)
-        importlib.reload(backend.routers.images)
-
-        from backend.routers.images import get_cache_path
-
-        cache_path = get_cache_path("420", "F444W", 3.0, "viridis", "zscale")
-        assert ".cutout_cache" in cache_path
-        assert str(tmp_path) not in cache_path
-
-
 class TestSpectralLines:
     """Tests for spectral line definitions (backend validation of frontend constants)."""
     

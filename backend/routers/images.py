@@ -1,6 +1,5 @@
 import os
 import io
-import hashlib
 import numpy as np
 from astropy.io import fits
 from PIL import Image
@@ -11,16 +10,6 @@ from backend.utils.cutout import generate_cutout, get_nircam_band_path, scan_ava
 from backend.state import get_merged_catalog
 
 router = APIRouter(prefix="/api/images", tags=["images"])
-
-
-def get_cache_path(source_id, band, size, cmap, scale):
-    """Get the cache file path for a cutout."""
-    cache_dir = config.CUTOUT_CACHE_DIR
-    os.makedirs(cache_dir, exist_ok=True)
-
-    key = f"{source_id}_{band}_{size}_{cmap}_{scale}"
-    filename = hashlib.md5(key.encode()).hexdigest() + ".png"
-    return os.path.join(cache_dir, filename)
 
 
 def apply_scale(data, scale_method):
@@ -104,11 +93,6 @@ def get_cutout(
     scale: str = Query(default=config.DEFAULT_SCALE),
 ):
     """Cutout PNG for one NIRCam band."""
-    cache_path = get_cache_path(source_id, band, size, cmap, scale)
-    if os.path.exists(cache_path):
-        with open(cache_path, "rb") as f:
-            return Response(content=f.read(), media_type="image/png")
-
     catalog = get_merged_catalog()
     if catalog is None:
         raise HTTPException(status_code=404, detail="Catalog not available")
@@ -132,9 +116,6 @@ def get_cutout(
     img.save(buf, format="PNG")
     buf.seek(0)
     png_bytes = buf.read()
-
-    with open(cache_path, "wb") as f:
-        f.write(png_bytes)
 
     return Response(content=png_bytes, media_type="image/png")
 

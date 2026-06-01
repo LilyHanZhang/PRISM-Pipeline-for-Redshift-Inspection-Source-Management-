@@ -39,9 +39,6 @@ PDF_DIR = "sapphires_edr_spec_pdf"
 # Per filter × orientation, each containing 2D + 1D spectrum
 PDF_PATTERN = "spec_2d_{field}_{filter}_ID{id}_{orient}.pdf"
 
-# ── Cutout cache ──────────────────────────────────────────────────────────────
-CUTOUT_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".cutout_cache")
-
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_CUTOUT_SIZE_ARCSEC = 5.0
 DEFAULT_CMAP = "viridis"
