@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-violet-accent: #7c3aed;
+  --color-violet-bg: #f5f3ff;
+  --color-blue-accent: #2563eb;
+  --color-blue-bg: #eff6ff;
+  --color-cyan-accent: #0891b2;
+  --color-cyan-bg: #ecfeff;
+  --color-green-accent: #16a34a;
+  --color-green-bg: #f0fdf4;
+  --color-yellow-accent: #ca8a04;
+  --color-yellow-bg: #fefce8;
+  --color-orange-accent: #ea580c;
+  --color-orange-bg: #fff7ed;
+  --color-red-accent: #dc2626;
+  --color-red-bg: #fef2f2;
+  --color-pink-accent: #db2777;
+  --color-pink-bg: #fdf2f8;
+}
+
+[data-theme="dark"] {
+  --color-violet-accent: #a78bfa;
+  --color-violet-bg: #1e1b2e;
+  --color-blue-accent: #60a5fa;
+  --color-blue-bg: #1e2a3e;
+  --color-cyan-accent: #22d3ee;
+  --color-cyan-bg: #0e2a2e;
+  --color-green-accent: #4ade80;
+  --color-green-bg: #0f2a1a;
+  --color-yellow-accent: #facc15;
+  --color-yellow-bg: #2a2600;
+  --color-orange-accent: #fb923c;
+  --color-orange-bg: #2a1800;
+  --color-red-accent: #f87171;
+  --color-red-bg: #2a0f0f;
+  --color-pink-accent: #f472b6;
+  --color-pink-bg: #2a1020;
+}
+
+.panel-violet { border-color: var(--color-violet-accent); background: var(--color-violet-bg); }
+.panel-blue { border-color: var(--color-blue-accent); background: var(--color-blue-bg); }
+.panel-cyan { border-color: var(--color-cyan-accent); background: var(--color-cyan-bg); }
+.panel-green { border-color: var(--color-green-accent); background: var(--color-green-bg); }
+.panel-yellow { border-color: var(--color-yellow-accent); background: var(--color-yellow-bg); }
+.panel-orange { border-color: var(--color-orange-accent); background: var(--color-orange-bg); }
+.panel-red { border-color: var(--color-red-accent); background: var(--color-red-bg); }
+.panel-pink { border-color: var(--color-pink-accent); background: var(--color-pink-bg); }
+
+.text-violet { color: var(--color-violet-accent); }
+.text-blue { color: var(--color-blue-accent); }
+.text-cyan { color: var(--color-cyan-accent); }
+.text-green { color: var(--color-green-accent); }
+.text-yellow { color: var(--color-yellow-accent); }
+.text-orange { color: var(--color-orange-accent); }
+.text-red { color: var(--color-red-accent); }
+.text-pink { color: var(--color-pink-accent); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.chip-violet { border-color: var(--color-violet-accent); color: var(--color-violet-accent); background: var(--color-violet-bg); }
+.chip-blue { border-color: var(--color-blue-accent); color: var(--color-blue-accent); background: var(--color-blue-bg); }
+.chip-cyan { border-color: var(--color-cyan-accent); color: var(--color-cyan-accent); background: var(--color-cyan-bg); }
+.chip-green { border-color: var(--color-green-accent); color: var(--color-green-accent); background: var(--color-green-bg); }
+.chip-yellow { border-color: var(--color-yellow-accent); color: var(--color-yellow-accent); background: var(--color-yellow-bg); }
+.chip-orange { border-color: var(--color-orange-accent); color: var(--color-orange-accent); background: var(--color-orange-bg); }
+.chip-red { border-color: var(--color-red-accent); color: var(--color-red-accent); background: var(--color-red-bg); }
+.chip-pink { border-color: var(--color-pink-accent); color: var(--color-pink-accent); background: var(--color-pink-bg); }
+
+.rainbow-text {
+  background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
