@@ -54,7 +54,7 @@ function SourceList({ sources, selectedId, onSelect }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
         {filtered.map(source => {
           const isSelected = source.id === selectedId
           const z = source.z_spec ?? source.z_phot ?? '—'

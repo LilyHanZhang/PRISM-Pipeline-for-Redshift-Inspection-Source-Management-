@@ -15,6 +15,7 @@ const COMBOS = FILTERS.flatMap(f => ORIENTS.map(o => ({ filter: f, orient: o }))
 
 function App() {
   const [sources, setSources] = useState([])
+  const [allSources, setAllSources] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [activeCombo, setActiveCombo] = useState({ filter: 'F356W', orient: 'R' })
   const [darkMode, setDarkMode] = useState(() => {
@@ -22,10 +23,22 @@ function App() {
   })
   const [showCoordSearch, setShowCoordSearch] = useState(false)
   const [tagsDb, setTagsDb] = useState({})
+  const [showOnlySpec, setShowOnlySpec] = useState(true)
 
   useEffect(() => {
-    getSources().then(res => setSources(res.data)).catch(() => setSources([]))
+    Promise.all([
+      getSources(true),
+      getSources(false),
+    ]).then(([specRes, allRes]) => {
+      setSources(specRes.data)
+      setAllSources(allRes.data)
+    }).catch(() => {
+      setSources([])
+      setAllSources([])
+    })
   }, [])
+
+  const displaySources = showOnlySpec ? sources : allSources
 
   useEffect(() => {
     const theme = darkMode ? 'dark' : 'light'
@@ -57,6 +70,14 @@ function App() {
       <header className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <h1 className="text-xl font-bold rainbow-text">PRISM</h1>
         <div className="flex items-center gap-2">
+          <select
+            value={showOnlySpec ? 'spec' : 'all'}
+            onChange={(e) => setShowOnlySpec(e.target.value === 'spec')}
+            className="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+          >
+            <option value="spec">Sources with grism spectra</option>
+            <option value="all">All sources</option>
+          </select>
           <button
             onClick={() => setShowCoordSearch(!showCoordSearch)}
             className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -74,23 +95,26 @@ function App() {
 
       {showCoordSearch && (
         <div className="border-b border-gray-200 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-          <CoordSearch sources={sources} onSelect={handleSelectSource} />
+          <CoordSearch sources={displaySources} onSelect={handleSelectSource} />
         </div>
       )}
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 57px)' }}>
         {/* Left panel - Source list */}
-        <aside className="w-64 border-r border-gray-200 dark:border-gray-800 overflow-y-auto panel-violet">
+        <aside className="w-64 border-r border-gray-200 dark:border-gray-800 panel-violet flex flex-col" style={{ height: '100%' }}>
           <SourceList
-            sources={sources}
+            sources={displaySources}
             selectedId={selectedId}
             onSelect={handleSelectSource}
           />
         </aside>
 
         {/* Right panels */}
-        <main className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-gray-950">
+        <main
+          className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-gray-950"
+          style={{ height: '100%', overflowY: 'auto' }}
+        >
           {!selectedSource ? (
             <div className="flex items-center justify-center h-64 text-gray-400">
               Select a source from the list to begin
@@ -142,21 +166,23 @@ function App() {
                 orient={activeCombo.orient}
               />
 
-              {/* SED + Image panels side by side */}
+              {/* NIRCam images - full width above SED */}
+              <ImagePanel source={selectedSource} />
+
+              {/* SED + Tags/Redshift side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <SEDPanel source={selectedSource} />
-                <ImagePanel source={selectedSource} />
+                <div className="space-y-3">
+                  <TagEditor
+                    source={selectedSource}
+                    onTagsUpdate={(tags) => handleTagsUpdate(selectedSource.id, tags)}
+                  />
+                  <RedshiftBar
+                    source={selectedSource}
+                    onZSpecUpdate={(z) => handleZSpecUpdate(selectedSource.id, z)}
+                  />
+                </div>
               </div>
-
-              {/* Tags + Redshift bar */}
-              <TagEditor
-                source={selectedSource}
-                onTagsUpdate={(tags) => handleTagsUpdate(selectedSource.id, tags)}
-              />
-              <RedshiftBar
-                source={selectedSource}
-                onZSpecUpdate={(z) => handleZSpecUpdate(selectedSource.id, z)}
-              />
             </>
           )}
         </main>

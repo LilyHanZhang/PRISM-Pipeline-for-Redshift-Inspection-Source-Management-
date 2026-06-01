@@ -41,30 +41,57 @@ def read_1d_spectrum(source_id, filter_name, orient):
 
     try:
         with fits.open(path) as hdul:
-            data = hdul[0].data
-            if data is None:
+            if len(hdul) < 2:
                 return None
 
-            if isinstance(data, np.ndarray) and data.dtype.names:
-                wave = data["WAVE"].tolist()
-                flux = data["FLUX"].tolist()
-                err = data["ERR"].tolist() if "ERR" in data.dtype.names else None
-            else:
-                if data.ndim == 2:
-                    wave = data[0].tolist()
-                    flux = data[1].tolist()
-                    err = data[2].tolist() if data.shape[0] > 2 else None
-                elif data.ndim == 1:
-                    wave = list(range(len(data)))
-                    flux = data.tolist()
-                    err = None
-                else:
-                    return None
+            table = hdul[1].data
+            if table is None:
+                return None
+
+            col_names = table.dtype.names
+
+            wave_col = None
+            for c in ["wavelength_um", "WAVE", "wavelength", "WAVELENGTH"]:
+                if c in col_names:
+                    wave_col = c
+                    break
+
+            flux_col = None
+            for c in ["opt_spec1d_mJy", "FLUX", "flux", "SPEC1D"]:
+                if c in col_names:
+                    flux_col = c
+                    break
+
+            err_col = None
+            for c in ["opt_fluxerr_mJy", "ERR", "flux_err", "fluxerr", "SPEC1D_ERR"]:
+                if c in col_names:
+                    err_col = c
+                    break
+
+            if wave_col is None or flux_col is None:
+                return None
+
+            wave = table[wave_col].tolist()
+            flux = table[flux_col].tolist()
+            err = table[err_col].tolist() if err_col else None
+
+            def clean_floats(arr):
+                result = []
+                for v in arr:
+                    try:
+                        fv = float(v)
+                        if np.isnan(fv) or np.isinf(fv):
+                            result.append(None)
+                        else:
+                            result.append(fv)
+                    except (TypeError, ValueError):
+                        result.append(None)
+                return result
 
             return {
-                "wave": [float(w) for w in wave],
-                "flux": [float(f) for f in flux],
-                "err": [float(e) for e in err] if err else None,
+                "wave": clean_floats(wave),
+                "flux": clean_floats(flux),
+                "err": clean_floats(err) if err else None,
             }
     except Exception:
         return None
@@ -132,7 +159,9 @@ def render_2d_png(source_id, filter_name, orient, cmap="viridis", scale="zscale"
 
     try:
         with fits.open(path) as hdul:
-            data = hdul[0].data
+            if len(hdul) < 2:
+                return None
+            data = hdul[1].data
             if data is None:
                 return None
 

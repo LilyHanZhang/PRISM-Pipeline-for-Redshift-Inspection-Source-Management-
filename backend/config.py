@@ -40,7 +40,7 @@ PDF_DIR = "sapphires_edr_spec_pdf"
 PDF_PATTERN = "spec_2d_{field}_{filter}_ID{id}_{orient}.pdf"
 
 # ── Cutout cache ──────────────────────────────────────────────────────────────
-CUTOUT_CACHE_DIR = "cutout_cache"  # relative to DATA_ROOT; auto-created
+CUTOUT_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".cutout_cache")
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_CUTOUT_SIZE_ARCSEC = 5.0

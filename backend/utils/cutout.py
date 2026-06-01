@@ -5,6 +5,7 @@ from astropy.nddata import Cutout2D
 from astropy import units as u
 from astropy.wcs import WCS
 from astropy.io import fits
+from astropy.coordinates import SkyCoord
 from backend import config
 
 
@@ -12,20 +13,20 @@ def generate_cutout(hdu_or_path, ra, dec, size_arcsec=5.0):
     """Generate a cutout from a FITS file at the given coordinates."""
     if isinstance(hdu_or_path, str):
         with fits.open(hdu_or_path) as hdul:
-            data = hdul[0].data
+            data = np.array(hdul[0].data, dtype=np.float64)
             wcs = WCS(hdul[0].header)
     else:
-        data = hdu_or_path[0].data
+        data = np.array(hdu_or_path[0].data, dtype=np.float64)
         wcs = WCS(hdu_or_path[0].header)
 
     if data is None:
         return None
 
-    position = (ra, dec) * u.deg
+    skycoord = SkyCoord(ra, dec, unit='deg')
     size = size_arcsec * u.arcsec
 
     try:
-        cutout = Cutout2D(data, position, size, wcs=wcs)
+        cutout = Cutout2D(data, skycoord, size, wcs=wcs)
         return cutout
     except Exception:
         return None
@@ -37,9 +38,9 @@ def get_nircam_band_path(band):
     if not os.path.exists(sci_dir):
         return None
 
-    # Pattern: {field}_{band}_v{ver}_sci.fits
+    # Try the configured field name first, then fall back to any prefix
     pattern = re.compile(
-        rf"^{re.escape(config.FIELD_NAME)}_{re.escape(band)}_v\d+_sci\.fits$"
+        rf"^.+_{re.escape(band)}_v\d+_sci\.fits$"
     )
     for fname in os.listdir(sci_dir):
         if pattern.match(fname):
@@ -54,9 +55,8 @@ def scan_available_bands():
         return []
 
     bands = set()
-    # Pattern: {field}_{band}_v{ver}_sci.fits
     pattern = re.compile(
-        rf"^{re.escape(config.FIELD_NAME)}_(.+?)_v\d+_sci\.fits$"
+        rf"^.+_(.+?)_v\d+_sci\.fits$"
     )
     for fname in os.listdir(sci_dir):
         m = pattern.match(fname)

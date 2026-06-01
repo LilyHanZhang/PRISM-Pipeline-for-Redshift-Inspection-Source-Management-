@@ -19,9 +19,25 @@ def load_spec_cat():
 
 
 def load_phot_cat():
-    """Load the photometric catalog."""
+    """Load the photometric catalog with z_phot from HDU 2."""
     path = os.path.join(config.DATA_ROOT, config.PHOT_CAT_FILE)
-    return load_catalog(path)
+    if not os.path.exists(path):
+        return None
+
+    phot_tab = Table.read(path, hdu=1)
+
+    try:
+        zphot_tab = Table.read(path, hdu=2)
+        id_col = config.CATALOG_ID_COL
+        z_col = "z_map"
+        if id_col in zphot_tab.colnames and z_col in zphot_tab.colnames:
+            zphot_simple = zphot_tab[id_col, z_col]
+            zphot_simple.rename_column(z_col, "z_phot")
+            phot_tab = join(phot_tab, zphot_simple, keys=id_col, join_type="left")
+    except Exception:
+        pass
+
+    return phot_tab
 
 
 def merge_catalogs(spec_cat, phot_cat):

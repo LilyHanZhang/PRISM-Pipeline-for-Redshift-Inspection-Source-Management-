@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import Plot from 'react-plotly.js'
 import { get2DSpectrumUrl, get1DSpectrum } from '../utils/api'
-import { SPECTRAL_LINES, getObservedWavelength } from '../utils/specLines'
+import { SPECTRAL_LINES, getObservedWavelength, FILTER_RANGES } from '../utils/specLines'
 
-const CMAPS = ['viridis', 'gray', 'inferno', 'hot', 'plasma', 'magma', 'RdBu']
+const CMAPS = ['viridis', 'gray', 'inferno', 'hot', 'plasma', 'magma', 'RdBu', 'seismic']
 const SCALES = ['zscale', 'linear', 'log', 'sqrt']
 
 function SpectraPanel({ source, filter, orient, mode = '2d' }) {
@@ -29,11 +29,14 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
 
   const spectralLines = useMemo(() => {
     if (!source.z_spec) return []
-    return SPECTRAL_LINES.map(line => ({
-      ...line,
-      observed: getObservedWavelength(line.wavelength, source.z_spec),
-    }))
-  }, [source.z_spec])
+    const range = FILTER_RANGES[filter]
+    return SPECTRAL_LINES
+      .map(line => ({
+        ...line,
+        observed: getObservedWavelength(line.wavelength, source.z_spec),
+      }))
+      .filter(l => l.observed >= range.min && l.observed <= range.max)
+  }, [source.z_spec, filter])
 
   if (!hasData) {
     return (
@@ -136,6 +139,8 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       font: { size: 10, color: '#16a34a' },
     }))
 
+  const range = FILTER_RANGES[filter]
+
   return (
     <div className="panel-green rounded-lg border p-3">
       <h3 className="font-semibold text-green mb-2">
@@ -146,7 +151,11 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
         layout={{
           margin: { t: 20, r: 20, b: 40, l: 50 },
           height: 250,
-          xaxis: { title: 'Wavelength (μm)', gridcolor: '#e5e7eb' },
+          xaxis: {
+            title: 'Wavelength (μm)',
+            gridcolor: '#e5e7eb',
+            range: [range.min, range.max],
+          },
           yaxis: { title: 'Flux', gridcolor: '#e5e7eb' },
           shapes,
           annotations,

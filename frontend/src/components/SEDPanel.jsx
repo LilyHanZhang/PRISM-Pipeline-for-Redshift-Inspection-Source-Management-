@@ -1,23 +1,64 @@
 import { useState } from 'react'
 import Plot from 'react-plotly.js'
 
-function SEDPanel({ source }) {
-  const [unit, setUnit] = useState('flux')
+const LAMBDA_REF_DICT = {
+  'F070W': 7039.12,
+  'F090W': 9021.53,
+  'F115W': 11542.61,
+  'F140M': 14053.23,
+  'F150W': 15007.44,
+  'F162M': 16272.47,
+  'F182M': 18451.67,
+  'F200W': 19886.48,
+  'F210M': 20954.51,
+  'F250M': 25032.33,
+  'F277W': 27617.40,
+  'F300M': 29891.21,
+  'F356W': 35683.62,
+  'F360M': 36241.76,
+  'F410M': 40822.38,
+  'F444W': 44043.15,
+  'F335M': 33537.23,
+}
 
-  if (!source.has_sed) {
+function SEDPanel({ source }) {
+  const [unit, setUnit] = useState('mag')
+
+  const photBands = source.phot_bands || {}
+
+  const bands = []
+  const waves = []
+  const mags = []
+  const magErrs = []
+
+  for (const [key, val] of Object.entries(photBands)) {
+    if (key.endsWith('_MAG') && !key.endsWith('_MAG_e')) {
+      const bandName = key.replace('_MAG', '')
+      const errKey = key + '_e'
+      const wave = LAMBDA_REF_DICT[bandName]
+      if (wave && val !== null && val !== undefined) {
+        bands.push(bandName)
+        waves.push(wave / 10000)
+        mags.push(val)
+        magErrs.push(photBands[errKey] || 0)
+      }
+    }
+  }
+
+  const sorted = bands.map((_, i) => i).sort((a, b) => waves[a] - waves[b])
+  const sortedWaves = sorted.map(i => waves[i])
+  const sortedMags = sorted.map(i => mags[i])
+  const sortedErrs = sorted.map(i => magErrs[i])
+  const sortedBands = sorted.map(i => bands[i])
+
+  const fluxes = sortedMags.map(m => 3631 * Math.pow(10, -0.4 * m))
+
+  if (bands.length === 0) {
     return (
       <div className="panel-yellow rounded-lg border p-8 text-center">
         <p className="text-yellow opacity-60">No photometric data available</p>
       </div>
     )
-  }
-
-  // Placeholder: in production, this would fetch photometry from the backend
-  const mockData = {
-    wave: [0.7, 0.9, 1.15, 1.5, 2.0, 2.77, 3.56, 4.44],
-    flux: [1.2, 1.5, 2.1, 2.8, 3.2, 4.1, 4.8, 5.2],
-    err: [0.1, 0.1, 0.15, 0.2, 0.2, 0.3, 0.3, 0.4],
-    bands: ['F070W', 'F090W', 'F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W'],
   }
 
   return (
@@ -34,26 +75,34 @@ function SEDPanel({ source }) {
       <Plot
         data={[
           {
-            x: mockData.wave,
-            y: unit === 'flux' ? mockData.flux : mockData.flux.map(f => -2.5 * Math.log10(f / 3631)),
+            x: sortedWaves,
+            y: unit === 'flux' ? fluxes : sortedMags,
             error_y: {
               type: 'data',
-              array: mockData.err,
+              array: unit === 'flux'
+                ? fluxes.map((f, i) => f * 0.4 * Math.LN10 * sortedErrs[i] / 2.5)
+                : sortedErrs,
               visible: true,
             },
             type: 'scatter',
-            mode: 'lines+markers',
+            mode: 'lines+markers+text',
             line: { color: '#ca8a04', width: 2 },
-            marker: { size: 6 },
-            text: mockData.bands,
-            hovertemplate: '%{text}<br>λ=%{x:.2f} µm<br>Flux=%{y:.2f}<extra></extra>',
+            marker: { size: 8 },
+            text: sortedBands,
+            textposition: 'top center',
+            textfont: { size: 10, color: '#ca8a04' },
+            hovertemplate: '%{text}<br>λ=%{x:.2f} µm<br>%{y:.2f}<extra></extra>',
           },
         ]}
         layout={{
-          margin: { t: 10, r: 10, b: 40, l: 50 },
+          margin: { t: 20, r: 10, b: 40, l: 55 },
           height: 250,
           xaxis: { title: 'Wavelength (µm)', gridcolor: '#e5e7eb' },
-          yaxis: { title: unit === 'flux' ? 'Flux (µJy)' : 'AB Magnitude', gridcolor: '#e5e7eb' },
+          yaxis: {
+            title: unit === 'flux' ? 'Flux (µJy)' : 'AB Magnitude',
+            gridcolor: '#e5e7eb',
+            autorange: unit === 'mag',
+          },
           paper_bgcolor: 'transparent',
           plot_bgcolor: 'transparent',
           font: { color: '#374151' },

@@ -26,5 +26,5 @@ def get_pdf(source_id: str, filter_name: str, orient: str):
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
-        filename=pdf_filename,
+        headers={"Content-Disposition": f"inline; filename={pdf_filename}"},
     )

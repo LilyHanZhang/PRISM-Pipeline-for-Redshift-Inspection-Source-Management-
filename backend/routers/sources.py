@@ -13,8 +13,11 @@ def _safe_float(val):
     if val is None:
         return None
     try:
+        import numpy.ma as ma
+        if ma.is_masked(val):
+            return None
         f = float(val)
-        if np.isnan(f):
+        if np.isnan(f) or np.isinf(f):
             return None
         return f
     except (TypeError, ValueError):
@@ -30,20 +33,16 @@ def build_source_record(row, flags):
     ra = None
     for c in [ra_col, "RA_1", "RA"]:
         if c and c in row.colnames:
-            try:
-                ra = float(row[c])
-            except (TypeError, ValueError):
-                pass
-            break
+            ra = _safe_float(row[c])
+            if ra is not None:
+                break
 
     dec = None
     for c in [dec_col, "DEC_1", "DEC"]:
         if c and c in row.colnames:
-            try:
-                dec = float(row[c])
-            except (TypeError, ValueError):
-                pass
-            break
+            dec = _safe_float(row[c])
+            if dec is not None:
+                break
 
     z_spec = None
     for col_name in [config.SPEC_CAT_ZSPEC_COL, "zspec", "z_spec", "ZSPEC"]:
@@ -78,13 +77,17 @@ def build_source_record(row, flags):
         "has_pdf": flags.get("has_pdf", {}),
         "has_sed": flags.get("has_sed", False),
         "has_rgb": flags.get("has_rgb", False),
+        "has_spec": any(flags.get("has_1d", {}).values()) or any(flags.get("has_2d", {}).values()),
         "phot_bands": phot_bands,
     }
 
 
 @router.get("/")
-def get_sources():
-    """Full source list with flags, z values, tags."""
+def get_sources(has_spec: bool = False):
+    """Full source list with flags, z values, tags.
+
+    If has_spec=True, only return sources with at least one grism spectrum.
+    """
     catalog = get_merged_catalog()
     if catalog is None:
         return []
@@ -94,7 +97,10 @@ def get_sources():
     for row in catalog:
         sid = str(row[id_col])
         flags = get_source_flags(sid)
-        records.append(build_source_record(row, flags))
+        rec = build_source_record(row, flags)
+        if has_spec and not rec["has_spec"]:
+            continue
+        records.append(rec)
     return records
 
 

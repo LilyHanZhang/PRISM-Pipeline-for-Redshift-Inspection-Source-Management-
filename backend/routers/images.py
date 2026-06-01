@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/images", tags=["images"])
 
 def get_cache_path(source_id, band, size, cmap, scale):
     """Get the cache file path for a cutout."""
-    cache_dir = os.path.join(config.DATA_ROOT, config.CUTOUT_CACHE_DIR)
+    cache_dir = config.CUTOUT_CACHE_DIR
     os.makedirs(cache_dir, exist_ok=True)
 
     key = f"{source_id}_{band}_{size}_{cmap}_{scale}"
@@ -34,6 +34,15 @@ def apply_scale(data, scale_method):
         from astropy.visualization import ZScaleInterval
         interval = ZScaleInterval()
         vmin, vmax = interval.get_limits(data)
+    elif scale_method == "asinh":
+        from astropy.visualization import AsinhStretch, ImageNormalize
+        from astropy.visualization import ZScaleInterval
+        interval = ZScaleInterval()
+        vmin, vmax = interval.get_limits(data)
+        norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch())
+        data = norm(data)
+        data = np.nan_to_num(data, nan=0.0, posinf=1.0, neginf=0.0)
+        return np.clip(data, 0, 1)
     elif scale_method == "linear":
         vmin, vmax = np.nanpercentile(data, [1, 99])
     elif scale_method == "log":
@@ -60,6 +69,32 @@ def apply_cmap(data, cmap_name):
     return Image.fromarray(rgba, mode="RGB")
 
 
+def get_source_coords(catalog, source_id):
+    """Get RA/DEC for a source from the merged catalog, handling column renaming."""
+    id_col = config.CATALOG_ID_COL
+    for r in catalog:
+        if str(r[id_col]) == source_id:
+            ra = None
+            for c in [config.CATALOG_RA_COL, "RA_1", "RA"]:
+                if c and c in r.colnames:
+                    try:
+                        ra = float(r[c])
+                    except (TypeError, ValueError):
+                        pass
+                    break
+            dec = None
+            for c in [config.CATALOG_DEC_COL, "DEC_1", "DEC"]:
+                if c and c in r.colnames:
+                    try:
+                        dec = float(r[c])
+                    except (TypeError, ValueError):
+                        pass
+                    break
+            if ra is not None and dec is not None:
+                return ra, dec
+    return None, None
+
+
 @router.get("/cutout/{source_id}/{band}")
 def get_cutout(
     source_id: str,
@@ -78,24 +113,15 @@ def get_cutout(
     if catalog is None:
         raise HTTPException(status_code=404, detail="Catalog not available")
 
-    id_col = config.CATALOG_ID_COL
-    ra_col = config.CATALOG_RA_COL
-    dec_col = config.CATALOG_DEC_COL
-
-    row = None
-    for r in catalog:
-        if str(r[id_col]) == source_id:
-            row = r
-            break
-
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"Source {source_id} not found")
+    ra, dec = get_source_coords(catalog, source_id)
+    if ra is None or dec is None:
+        raise HTTPException(status_code=404, detail=f"Source {source_id} coordinates not found")
 
     band_path = get_nircam_band_path(band)
     if band_path is None:
         raise HTTPException(status_code=404, detail=f"Band {band} not found")
 
-    cutout = generate_cutout(band_path, float(row[ra_col]), float(row[dec_col]), size)
+    cutout = generate_cutout(band_path, ra, dec, size)
     if cutout is None or cutout.data is None:
         raise HTTPException(status_code=404, detail="Cutout generation failed")
 
@@ -123,30 +149,29 @@ def get_rgb(
     if catalog is None:
         raise HTTPException(status_code=404, detail="Catalog not available")
 
-    id_col = config.CATALOG_ID_COL
-    ra_col = config.CATALOG_RA_COL
-    dec_col = config.CATALOG_DEC_COL
-
-    row = None
-    for r in catalog:
-        if str(r[id_col]) == source_id:
-            row = r
-            break
-
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"Source {source_id} not found")
-
-    ra, dec = float(row[ra_col]), float(row[dec_col])
+    ra, dec = get_source_coords(catalog, source_id)
+    if ra is None or dec is None:
+        raise HTTPException(status_code=404, detail=f"Source {source_id} coordinates not found")
     channels = {}
+    ref_shape = None
 
     for ch, band in config.RGB_BANDS.items():
         band_path = get_nircam_band_path(band)
         if band_path is None:
             continue
         cutout = generate_cutout(band_path, ra, dec, size)
-        if cutout is None:
+        if cutout is None or cutout.data is None:
             continue
+        
         scaled = apply_scale(cutout.data, config.RGB_SCALE)
+        if scaled is None:
+            continue
+            
+        if ref_shape is None:
+            ref_shape = scaled.shape
+        elif scaled.shape != ref_shape:
+            continue
+            
         channels[ch] = scaled
 
     if len(channels) < 3:
