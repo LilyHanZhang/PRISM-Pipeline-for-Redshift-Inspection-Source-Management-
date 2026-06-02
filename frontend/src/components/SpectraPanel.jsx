@@ -90,25 +90,55 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
     )
   }
 
+  const gaussianFilter1d = (data, sigma) => {
+    const radius = Math.ceil(sigma * 4)
+    const kernel = []
+    let sum = 0
+    for (let i = -radius; i <= radius; i++) {
+      const val = Math.exp(-(i * i) / (2 * sigma * sigma))
+      kernel.push(val)
+      sum += val
+    }
+    for (let i = 0; i < kernel.length; i++) kernel[i] /= sum
+
+    const result = []
+    for (let i = 0; i < data.length; i++) {
+      let val = 0
+      let weight = 0
+      for (let j = 0; j < kernel.length; j++) {
+        const idx = i + j - radius
+        if (idx >= 0 && idx < data.length && data[idx] !== null && data[idx] !== undefined) {
+          val += data[idx] * kernel[j]
+          weight += kernel[j]
+        }
+      }
+      result.push(weight > 0 ? val / weight : null)
+    }
+    return result
+  }
+
+  const smoothedFlux = spectrum1d.flux.map(f => f === null ? 0 : f)
+  const smoothedLine = spectrum1d.line ? spectrum1d.line.map(f => f === null ? 0 : f) : null
+
   const traces = [
     {
       x: spectrum1d.wave,
-      y: spectrum1d.flux,
+      y: gaussianFilter1d(smoothedFlux, 0.6),
       type: 'scatter',
       mode: 'lines',
       line: { color: '#16a34a', width: 1.5 },
-      name: 'continuum',
+      name: 'smoothed continuum',
     },
   ]
 
-  if (spectrum1d.line) {
+  if (smoothedLine) {
     traces.push({
       x: spectrum1d.wave,
-      y: spectrum1d.line,
+      y: gaussianFilter1d(smoothedLine, 0.6),
       type: 'scatter',
       mode: 'lines',
       line: { color: '#dc2626', width: 1.5, dash: 'dash' },
-      name: 'line',
+      name: 'smoothed line',
     })
   }
 
