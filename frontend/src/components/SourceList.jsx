@@ -5,6 +5,8 @@ function SourceList({ sources, selectedId, onSelect }) {
   const [activeTags, setActiveTags] = useState([])
   const [isFocused, setIsFocused] = useState(false)
   const listRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+  const itemRefs = useRef({})
 
   const allTags = useMemo(() => {
     const tags = new Set()
@@ -64,6 +66,22 @@ function SourceList({ sources, selectedId, onSelect }) {
     return () => el.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  useEffect(() => {
+    if (!selectedId || !scrollContainerRef.current) return
+    const item = itemRefs.current[selectedId]
+    if (!item) return
+
+    const container = scrollContainerRef.current
+    const containerRect = container.getBoundingClientRect()
+    const itemRect = item.getBoundingClientRect()
+
+    if (itemRect.bottom > containerRect.bottom) {
+      item.scrollIntoView({ block: 'nearest' })
+    } else if (itemRect.top < containerRect.top) {
+      item.scrollIntoView({ block: 'nearest' })
+    }
+  }, [selectedId])
+
   return (
     <div
       ref={listRef}
@@ -106,13 +124,14 @@ function SourceList({ sources, selectedId, onSelect }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
         {filtered.map(source => {
           const isSelected = source.id === selectedId
           const z = source.z_spec ?? source.z_phot ?? '—'
           return (
             <div
               key={source.id}
+              ref={el => { itemRefs.current[source.id] = el }}
               onClick={() => handleSelectWithFocus(source.id)}
               className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-violet-100 dark:border-violet-900 transition ${
                 isSelected
