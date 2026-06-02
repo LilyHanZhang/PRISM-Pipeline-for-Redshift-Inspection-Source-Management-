@@ -117,57 +117,57 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
     return result
   }
 
-  const smoothedFlux = spectrum1d.flux.map(f => f === null ? 0 : f)
-  const smoothedLine = spectrum1d.line ? spectrum1d.line.map(f => f === null ? 0 : f) : null
+  const hasContinuum = spectrum1d.flux.some(f => f !== null && f !== undefined && f !== 0)
 
-  const traces = [
-    {
-      x: spectrum1d.wave,
-      y: gaussianFilter1d(smoothedFlux, 0.6),
-      type: 'scatter',
-      mode: 'lines',
-      line: { color: '#16a34a', width: 1.5 },
-      name: 'smoothed continuum',
-    },
-  ]
+  const traces = []
 
-  if (smoothedLine) {
+  // line (tmp_spec_1d) - black, drawn first
+  if (spectrum1d.line) {
+    const smoothedLine = spectrum1d.line.map(f => (f === null || f === undefined) ? 0 : f)
     traces.push({
       x: spectrum1d.wave,
       y: gaussianFilter1d(smoothedLine, 0.6),
       type: 'scatter',
       mode: 'lines',
-      line: { color: '#dc2626', width: 1.5, dash: 'dash' },
+      line: { color: '#000000', width: 1.5, shape: 'hvh' },
       name: 'smoothed line',
     })
   }
 
-  if (spectrum1d.err) {
-    const upper = spectrum1d.flux.map((f, i) => f + spectrum1d.err[i])
-    const lower = spectrum1d.flux.map((f, i) => f - spectrum1d.err[i])
+  // continuum (tmp_spec_1d_cont) - dimgrey, drawn second (on top)
+  if (hasContinuum) {
+    const smoothedFlux = spectrum1d.flux.map(f => (f === null || f === undefined) ? 0 : f)
     traces.push({
-      x: [...spectrum1d.wave, ...spectrum1d.wave.reverse()],
-      y: [...upper, ...lower.reverse()],
+      x: spectrum1d.wave,
+      y: gaussianFilter1d(smoothedFlux, 0.6),
       type: 'scatter',
-      fill: 'toself',
-      fillcolor: 'rgba(22, 163, 74, 0.15)',
-      line: { color: 'transparent' },
-      name: '±1σ',
-      showlegend: false,
+      mode: 'lines',
+      line: { color: '#696969', width: 1.5, shape: 'hvh' },
+      name: 'smoothed continuum',
     })
   }
 
-  const shapes = spectralLines
-    .filter(l => l.observed > 0)
-    .map(l => ({
+  const shapes = [
+    {
       type: 'line',
-      x0: l.observed,
-      x1: l.observed,
+      x0: range.min,
+      x1: range.max,
       y0: 0,
-      y1: 1,
-      yref: 'paper',
-      line: { color: '#16a34a', width: 1, dash: 'dash' },
-    }))
+      y1: 0,
+      line: { color: '#808080', width: 1, dash: 'dash' },
+    },
+    ...spectralLines
+      .filter(l => l.observed > 0)
+      .map(l => ({
+        type: 'line',
+        x0: l.observed,
+        x1: l.observed,
+        y0: 0,
+        y1: 1,
+        yref: 'paper',
+        line: { color: '#16a34a', width: 1, dash: 'dash' },
+      }))
+  ]
 
   const annotations = spectralLines
     .filter(l => l.observed > 0)
@@ -182,13 +182,17 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
 
   const range = FILTER_RANGES[filter]
 
-  // Calculate y-axis range using 95th percentile (matching reference code approach)
-  const fluxValues = spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
+  // Calculate y-axis range matching reference code:
+  // if has continuum: p95 * 1.25, else: p95 * 1.5
+  const fluxValues = hasContinuum
+    ? spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
+    : (spectrum1d.line || []).filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
   let yRange = null
   if (fluxValues.length > 0) {
     const sorted = [...fluxValues].sort((a, b) => a - b)
     const p95 = sorted[Math.floor(sorted.length * 0.95)]
-    const tmpMaxCounts = p95 * 1.5
+    const multiplier = hasContinuum ? 1.25 : 1.5
+    const tmpMaxCounts = p95 * multiplier
     const yMin = -0.035
     const yMax = Math.max(Math.min(tmpMaxCounts, 1e8), 0.015)
     yRange = [yMin, yMax]
