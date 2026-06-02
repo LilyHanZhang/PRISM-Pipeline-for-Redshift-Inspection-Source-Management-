@@ -141,15 +141,16 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
 
   const range = FILTER_RANGES[filter]
 
-  // Calculate y-axis range using percentile clipping to handle outliers
-  const fluxValues = spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f))
+  // Calculate y-axis range using 95th percentile (matching reference code approach)
+  const fluxValues = spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
   let yRange = null
   if (fluxValues.length > 0) {
     const sorted = [...fluxValues].sort((a, b) => a - b)
-    const p1 = sorted[Math.floor(sorted.length * 0.01)]
-    const p99 = sorted[Math.floor(sorted.length * 0.99)]
-    const padding = (p99 - p1) * 0.1
-    yRange = [p1 - padding, p99 + padding]
+    const p95 = sorted[Math.floor(sorted.length * 0.95)]
+    const tmpMaxCounts = p95 * 1.5
+    const yMin = -0.035
+    const yMax = Math.max(Math.min(tmpMaxCounts, 1e8), 0.015)
+    yRange = [yMin, yMax]
   }
 
   return (
