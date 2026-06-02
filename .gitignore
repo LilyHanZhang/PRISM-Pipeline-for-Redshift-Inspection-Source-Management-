@@ -4,3 +4,6 @@ __pycache__/
 frontend/dist/
 tags_db.json.bak
 .DS_Store
+.env
+data_config.md
+/Users/zhanghong/Documents/Research/Slitless_spectroscopy/sapphires_data/

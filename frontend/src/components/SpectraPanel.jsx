@@ -96,10 +96,21 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       y: spectrum1d.flux,
       type: 'scatter',
       mode: 'lines',
-      line: { color: '#16a34a', width: 1 },
-      name: 'Flux',
+      line: { color: '#16a34a', width: 1.5 },
+      name: 'continuum',
     },
   ]
+
+  if (spectrum1d.line) {
+    traces.push({
+      x: spectrum1d.wave,
+      y: spectrum1d.line,
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#dc2626', width: 1.5, dash: 'dash' },
+      name: 'line',
+    })
+  }
 
   if (spectrum1d.err) {
     const upper = spectrum1d.flux.map((f, i) => f + spectrum1d.err[i])
@@ -163,6 +174,8 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
         layout={{
           margin: { t: 20, r: 20, b: 40, l: 50 },
           height: 250,
+          showlegend: true,
+          legend: { x: 1, y: 1, xanchor: 'right', yanchor: 'top', bgcolor: 'rgba(255,255,255,0.8)', bordercolor: 'rgba(0,0,0,0.2)', borderwidth: 1 },
           xaxis: {
             title: 'Wavelength (μm)',
             gridcolor: '#e5e7eb',

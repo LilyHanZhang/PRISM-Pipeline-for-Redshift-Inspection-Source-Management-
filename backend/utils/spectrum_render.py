@@ -62,6 +62,12 @@ def read_1d_spectrum(source_id, filter_name, orient):
                     flux_col = c
                     break
 
+            line_col = None
+            for c in ["opt_line1d_mJy", "LINE", "line", "SPEC1D_LINE"]:
+                if c in col_names:
+                    line_col = c
+                    break
+
             err_col = None
             for c in ["opt_fluxerr_mJy", "ERR", "flux_err", "fluxerr", "SPEC1D_ERR"]:
                 if c in col_names:
@@ -73,6 +79,7 @@ def read_1d_spectrum(source_id, filter_name, orient):
 
             wave = table[wave_col].tolist()
             flux = table[flux_col].tolist()
+            line = table[line_col].tolist() if line_col else None
             err = table[err_col].tolist() if err_col else None
 
             def clean_floats(arr):
@@ -91,6 +98,7 @@ def read_1d_spectrum(source_id, filter_name, orient):
             return {
                 "wave": clean_floats(wave),
                 "flux": clean_floats(flux),
+                "line": clean_floats(line) if line else None,
                 "err": clean_floats(err) if err else None,
             }
     except Exception:

@@ -372,6 +372,129 @@ class TestSpectralLines:
 
         assert len(lines_in_range) > 0
 
+
+class TestDualTraceSpectrum:
+    """Tests for dual-trace 1D spectrum (continuum + line)."""
+
+    def test_read_1d_spectrum_with_line_data(self, monkeypatch, tmp_path):
+        """Test that 1D spectrum reading returns both continuum and line data."""
+        from astropy.io import fits
+        from astropy.table import Table
+
+        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
+        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
+
+        import backend.config
+        import backend.utils.spectrum_render
+        importlib.reload(backend.config)
+        importlib.reload(backend.utils.spectrum_render)
+
+        from backend.utils.spectrum_render import read_1d_spectrum
+
+        spec_dir = tmp_path / "sapphires_edr_1d_spec"
+        spec_dir.mkdir()
+
+        wave = np.array([3.0, 3.2, 3.4, 3.6, 3.8])
+        continuum = np.array([10.0, 12.0, 11.0, 13.0, 14.0])
+        line = np.array([15.0, 18.0, 14.0, 16.0, 17.0])
+        err = np.array([1.0, 1.2, 1.1, 1.3, 1.4])
+
+        t = Table()
+        t['wavelength_um'] = wave
+        t['opt_spec1d_mJy'] = continuum
+        t['opt_line1d_mJy'] = line
+        t['opt_fluxerr_mJy'] = err
+
+        primary_hdu = fits.PrimaryHDU()
+        hdu_list = fits.HDUList([primary_hdu, fits.BinTableHDU(t)])
+
+        test_file = spec_dir / "spec_1d_M0416_F356W_ID133_R.fits"
+        hdu_list.writeto(str(test_file), overwrite=True)
+
+        result = read_1d_spectrum("133", "F356W", "R")
+        assert result is not None
+        assert result['wave'] == [3.0, 3.2, 3.4, 3.6, 3.8]
+        assert result['flux'] == [10.0, 12.0, 11.0, 13.0, 14.0]
+        assert result['line'] == [15.0, 18.0, 14.0, 16.0, 17.0]
+        assert result['err'] == [1.0, 1.2, 1.1, 1.3, 1.4]
+
+    def test_read_1d_spectrum_without_line_data(self, monkeypatch, tmp_path):
+        """Test that 1D spectrum reading handles missing line column gracefully."""
+        from astropy.io import fits
+        from astropy.table import Table
+
+        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
+        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
+
+        import backend.config
+        import backend.utils.spectrum_render
+        importlib.reload(backend.config)
+        importlib.reload(backend.utils.spectrum_render)
+
+        from backend.utils.spectrum_render import read_1d_spectrum
+
+        spec_dir = tmp_path / "sapphires_edr_1d_spec"
+        spec_dir.mkdir()
+
+        wave = np.array([3.0, 3.2, 3.4, 3.6, 3.8])
+        continuum = np.array([10.0, 12.0, 11.0, 13.0, 14.0])
+        err = np.array([1.0, 1.2, 1.1, 1.3, 1.4])
+
+        t = Table()
+        t['wavelength_um'] = wave
+        t['opt_spec1d_mJy'] = continuum
+        t['opt_fluxerr_mJy'] = err
+
+        primary_hdu = fits.PrimaryHDU()
+        hdu_list = fits.HDUList([primary_hdu, fits.BinTableHDU(t)])
+
+        test_file = spec_dir / "spec_1d_M0416_F356W_ID134_R.fits"
+        hdu_list.writeto(str(test_file), overwrite=True)
+
+        result = read_1d_spectrum("134", "F356W", "R")
+        assert result is not None
+        assert result['wave'] == [3.0, 3.2, 3.4, 3.6, 3.8]
+        assert result['flux'] == [10.0, 12.0, 11.0, 13.0, 14.0]
+        assert result['line'] is None
+        assert result['err'] == [1.0, 1.2, 1.1, 1.3, 1.4]
+
+    def test_read_1d_spectrum_line_with_nan(self, monkeypatch, tmp_path):
+        """Test that line data with NaN values is cleaned properly."""
+        from astropy.io import fits
+        from astropy.table import Table
+
+        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
+        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
+
+        import backend.config
+        import backend.utils.spectrum_render
+        importlib.reload(backend.config)
+        importlib.reload(backend.utils.spectrum_render)
+
+        from backend.utils.spectrum_render import read_1d_spectrum
+
+        spec_dir = tmp_path / "sapphires_edr_1d_spec"
+        spec_dir.mkdir()
+
+        wave = np.array([3.0, 3.2, 3.4, 3.6])
+        continuum = np.array([10.0, 12.0, 11.0, 13.0])
+        line = np.array([15.0, np.nan, 14.0, np.inf])
+
+        t = Table()
+        t['wavelength_um'] = wave
+        t['opt_spec1d_mJy'] = continuum
+        t['opt_line1d_mJy'] = line
+
+        primary_hdu = fits.PrimaryHDU()
+        hdu_list = fits.HDUList([primary_hdu, fits.BinTableHDU(t)])
+
+        test_file = spec_dir / "spec_1d_M0416_F356W_ID135_R.fits"
+        hdu_list.writeto(str(test_file), overwrite=True)
+
+        result = read_1d_spectrum("135", "F356W", "R")
+        assert result is not None
+        assert result['line'] == [15.0, None, 14.0, None]
+
     def test_spectral_lines_in_range_f444w(self):
         """Test that spectral lines can be filtered for F444W range."""
         def getObservedWavelength(restAngstrom, z):
