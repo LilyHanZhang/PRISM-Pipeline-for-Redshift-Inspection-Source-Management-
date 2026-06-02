@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Plot from 'react-plotly.js'
 
 const LAMBDA_REF_DICT = {
@@ -23,6 +23,15 @@ const LAMBDA_REF_DICT = {
 
 function SEDPanel({ source }) {
   const [unit, setUnit] = useState('mag')
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-theme') === 'dark')
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   const photBands = source.phot_bands || {}
 
@@ -61,6 +70,10 @@ function SEDPanel({ source }) {
     )
   }
 
+  const sedColor = isDark ? '#facc15' : '#ca8a04'
+  const gridColor = isDark ? '#374151' : '#e5e7eb'
+  const fontColor = isDark ? '#d1d5db' : '#374151'
+
   return (
     <div className="panel-yellow rounded-lg border p-3">
       <div className="flex items-center justify-between mb-2">
@@ -86,26 +99,28 @@ function SEDPanel({ source }) {
             },
             type: 'scatter',
             mode: 'lines+markers+text',
-            line: { color: '#ca8a04', width: 2 },
+            line: { color: sedColor, width: 2 },
             marker: { size: 8 },
             text: sortedBands,
             textposition: 'top center',
-            textfont: { size: 10, color: '#ca8a04' },
+            textfont: { size: 10, color: sedColor },
             hovertemplate: '%{text}<br>λ=%{x:.2f} µm<br>%{y:.2f}<extra></extra>',
           },
         ]}
         layout={{
           margin: { t: 20, r: 10, b: 40, l: 55 },
           height: 250,
-          xaxis: { title: 'Wavelength (µm)', gridcolor: '#e5e7eb' },
+          xaxis: { title: 'Wavelength (µm)', gridcolor: gridColor, zerolinecolor: gridColor, font: { color: fontColor } },
           yaxis: {
             title: unit === 'flux' ? 'Flux (µJy)' : 'AB Magnitude',
-            gridcolor: '#e5e7eb',
+            gridcolor: gridColor,
+            zerolinecolor: gridColor,
             autorange: unit === 'mag',
+            font: { color: fontColor },
           },
           paper_bgcolor: 'transparent',
           plot_bgcolor: 'transparent',
-          font: { color: '#374151' },
+          font: { color: fontColor },
         }}
         config={{ responsive: true, displayModeBar: false }}
         className="w-full"

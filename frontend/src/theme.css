@@ -25,19 +25,131 @@
   --color-violet-accent: #a78bfa;
   --color-violet-bg: #1e1b2e;
   --color-blue-accent: #60a5fa;
-  --color-blue-bg: #1e2a3e;
+  --color-blue-bg: #172554;
   --color-cyan-accent: #22d3ee;
-  --color-cyan-bg: #0e2a2e;
+  --color-cyan-bg: #164e63;
   --color-green-accent: #4ade80;
-  --color-green-bg: #0f2a1a;
+  --color-green-bg: #14532d;
   --color-yellow-accent: #facc15;
-  --color-yellow-bg: #2a2600;
+  --color-yellow-bg: #422006;
   --color-orange-accent: #fb923c;
-  --color-orange-bg: #2a1800;
+  --color-orange-bg: #431407;
   --color-red-accent: #f87171;
-  --color-red-bg: #2a0f0f;
+  --color-red-bg: #450a0a;
   --color-pink-accent: #f472b6;
-  --color-pink-bg: #2a1020;
+  --color-pink-bg: #500724;
+}
+
+[data-theme="dark"] .panel-violet { background: var(--color-violet-bg) !important; }
+[data-theme="dark"] .panel-blue { background: var(--color-blue-bg) !important; }
+[data-theme="dark"] .panel-cyan { background: var(--color-cyan-bg) !important; }
+[data-theme="dark"] .panel-green { background: var(--color-green-bg) !important; }
+[data-theme="dark"] .panel-yellow { background: var(--color-yellow-bg) !important; }
+[data-theme="dark"] .panel-orange { background: var(--color-orange-bg) !important; }
+[data-theme="dark"] .panel-red { background: var(--color-red-bg) !important; }
+[data-theme="dark"] .panel-pink { background: var(--color-pink-bg) !important; }
+
+[data-theme="dark"] .chip-violet { background: var(--color-violet-bg) !important; }
+[data-theme="dark"] .chip-blue { background: var(--color-blue-bg) !important; }
+[data-theme="dark"] .chip-cyan { background: var(--color-cyan-bg) !important; }
+[data-theme="dark"] .chip-green { background: var(--color-green-bg) !important; }
+[data-theme="dark"] .chip-yellow { background: var(--color-yellow-bg) !important; }
+[data-theme="dark"] .chip-orange { background: var(--color-orange-bg) !important; }
+[data-theme="dark"] .chip-red { background: var(--color-red-bg) !important; }
+[data-theme="dark"] .chip-pink { background: var(--color-pink-bg) !important; }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] .min-h-screen {
+  background: #0f0f14 !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #1a1a24 !important;
+  color: #e5e7eb !important;
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #6b7280 !important;
+}
+
+[data-theme="dark"] button:not([class*="bg-"]) {
+  color: #e5e7eb !important;
+}
+
+[data-theme="dark"] .border-b {
+  border-color: #2d2d3d !important;
+}
+
+[data-theme="dark"] .bg-gray-50 {
+  background: #0f0f14 !important;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+  background: #1a1a24 !important;
+}
+
+[data-theme="dark"] .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+[data-theme="dark"] .hover\\:bg-gray-100:hover {
+  background: #2d2d3d !important;
+}
+
+[data-theme="dark"] .border-gray-200 {
+  border-color: #2d2d3d !important;
+}
+
+[data-theme="dark"] .border-gray-300 {
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background: #1a1a24 !important;
+}
+
+[data-theme="dark"] .text-violet {
+  color: var(--color-violet-accent) !important;
+}
+
+[data-theme="dark"] .text-blue {
+  color: var(--color-blue-accent) !important;
+}
+
+[data-theme="dark"] .text-cyan {
+  color: var(--color-cyan-accent) !important;
+}
+
+[data-theme="dark"] .text-green {
+  color: var(--color-green-accent) !important;
+}
+
+[data-theme="dark"] .text-yellow {
+  color: var(--color-yellow-accent) !important;
+}
+
+[data-theme="dark"] .text-orange {
+  color: var(--color-orange-accent) !important;
+}
+
+[data-theme="dark"] .text-red {
+  color: var(--color-red-accent) !important;
+}
+
+[data-theme="dark"] .text-pink {
+  color: var(--color-pink-accent) !important;
 }
 
 .panel-violet { border-color: var(--color-violet-accent); background: var(--color-violet-bg); }

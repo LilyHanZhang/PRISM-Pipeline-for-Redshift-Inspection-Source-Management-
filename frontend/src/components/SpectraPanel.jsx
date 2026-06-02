@@ -10,6 +10,15 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
   const [cmap, setCmap] = useState('viridis')
   const [scale, setScale] = useState('zscale')
   const [spectrum1d, setSpectrum1d] = useState(null)
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-theme') === 'dark')
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   const combo = `${filter}_${orient}`
   const hasData = mode === '2d'
@@ -119,9 +128,18 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
 
   const hasContinuum = spectrum1d.flux.some(f => f !== null && f !== undefined && f !== 0)
 
+  const lineColor = isDark ? '#ffffff' : '#000000'
+  const continuumColor = isDark ? '#a8a8a8' : '#696969'
+  const gridColor = isDark ? '#374151' : '#e5e7eb'
+  const fontColor = isDark ? '#d1d5db' : '#374151'
+  const zeroLineColor = isDark ? '#6b7280' : '#808080'
+  const spectralLineColor = isDark ? '#4ade80' : '#16a34a'
+  const legendBg = isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.8)'
+  const legendBorder = isDark ? 'rgba(100,100,100,0.5)' : 'rgba(0,0,0,0.2)'
+
   const traces = []
 
-  // line (tmp_spec_1d) - black, drawn first
+  // line (tmp_spec_1d) - black/white, drawn first
   if (spectrum1d.line) {
     const smoothedLine = spectrum1d.line.map(f => (f === null || f === undefined) ? 0 : f)
     traces.push({
@@ -129,12 +147,12 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       y: gaussianFilter1d(smoothedLine, 0.6),
       type: 'scatter',
       mode: 'lines',
-      line: { color: '#000000', width: 1.5, shape: 'hvh' },
+      line: { color: lineColor, width: 1.5, shape: 'hvh' },
       name: 'smoothed line',
     })
   }
 
-  // continuum (tmp_spec_1d_cont) - dimgrey, drawn second (on top)
+  // continuum (tmp_spec_1d_cont) - dimgrey/light grey, drawn second (on top)
   if (hasContinuum) {
     const smoothedFlux = spectrum1d.flux.map(f => (f === null || f === undefined) ? 0 : f)
     traces.push({
@@ -142,7 +160,7 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       y: gaussianFilter1d(smoothedFlux, 0.6),
       type: 'scatter',
       mode: 'lines',
-      line: { color: '#696969', width: 1.5, shape: 'hvh' },
+      line: { color: continuumColor, width: 1.5, shape: 'hvh' },
       name: 'smoothed continuum',
     })
   }
@@ -156,7 +174,7 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       x1: range.max,
       y0: 0,
       y1: 0,
-      line: { color: '#808080', width: 1, dash: 'dash' },
+      line: { color: zeroLineColor, width: 1, dash: 'dash' },
     },
     ...spectralLines
       .filter(l => l.observed > 0)
@@ -167,7 +185,7 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
         y0: 0,
         y1: 1,
         yref: 'paper',
-        line: { color: '#16a34a', width: 1, dash: 'dash' },
+        line: { color: spectralLineColor, width: 1, dash: 'dash' },
       }))
   ]
 
@@ -179,7 +197,7 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       yref: 'paper',
       text: l.name,
       showarrow: false,
-      font: { size: 10, color: '#16a34a' },
+      font: { size: 10, color: spectralLineColor },
     }))
 
   // Calculate y-axis range matching reference code:
@@ -214,22 +232,24 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
           margin: { t: 20, r: 20, b: 40, l: 50 },
           height: 250,
           showlegend: true,
-          legend: { x: 1, y: 1, xanchor: 'right', yanchor: 'top', bgcolor: 'rgba(255,255,255,0.8)', bordercolor: 'rgba(0,0,0,0.2)', borderwidth: 1 },
+          legend: { x: 1, y: 1, xanchor: 'right', yanchor: 'top', bgcolor: legendBg, bordercolor: legendBorder, borderwidth: 1, font: { color: fontColor } },
           xaxis: {
             title: 'Wavelength (μm)',
-            gridcolor: '#e5e7eb',
+            gridcolor: gridColor,
+            zerolinecolor: zeroLineColor,
             range: [range.min, range.max],
           },
           yaxis: { 
             title: 'Flux Density [mJy]', 
-            gridcolor: '#e5e7eb',
+            gridcolor: gridColor,
+            zerolinecolor: zeroLineColor,
             ...(yRange && { range: yRange }),
           },
           shapes,
           annotations,
           paper_bgcolor: 'transparent',
           plot_bgcolor: 'transparent',
-          font: { color: '#374151' },
+          font: { color: fontColor },
         }}
         config={{ responsive: true, displayModeBar: false }}
         className="w-full"
