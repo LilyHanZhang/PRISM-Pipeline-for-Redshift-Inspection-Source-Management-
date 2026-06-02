@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 
 function SourceList({ sources, selectedId, onSelect }) {
   const [search, setSearch] = useState('')
   const [activeTags, setActiveTags] = useState([])
+  const [isFocused, setIsFocused] = useState(false)
+  const listRef = useRef(null)
 
   const allTags = useMemo(() => {
     const tags = new Set()
@@ -27,8 +29,50 @@ function SourceList({ sources, selectedId, onSelect }) {
     )
   }
 
+  const handleSelectWithFocus = useCallback((id) => {
+    onSelect(id)
+    setIsFocused(true)
+  }, [onSelect])
+
+  const handleKeyDown = useCallback((e) => {
+    if (!isFocused) return
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+
+    e.preventDefault()
+    const currentIndex = filtered.findIndex(s => s.id === selectedId)
+    if (currentIndex === -1) {
+      if (filtered.length > 0) onSelect(filtered[0].id)
+      return
+    }
+
+    let newIndex
+    if (e.key === 'ArrowUp') {
+      newIndex = currentIndex - 1
+      if (newIndex < 0) return
+    } else {
+      newIndex = currentIndex + 1
+      if (newIndex >= filtered.length) return
+    }
+
+    onSelect(filtered[newIndex].id)
+  }, [isFocused, filtered, selectedId, onSelect])
+
+  useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    el.addEventListener('keydown', handleKeyDown)
+    return () => el.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
   return (
-    <div className="flex flex-col h-full">
+    <div
+      ref={listRef}
+      tabIndex={0}
+      className={`flex flex-col h-full outline-none ${
+        isFocused ? 'ring-2 ring-violet-400 ring-inset' : ''
+      }`}
+      onBlur={() => setIsFocused(false)}
+    >
       <div className="p-3 border-b border-violet-200 dark:border-violet-900">
         <input
           type="text"
@@ -69,7 +113,7 @@ function SourceList({ sources, selectedId, onSelect }) {
           return (
             <div
               key={source.id}
-              onClick={() => onSelect(source.id)}
+              onClick={() => handleSelectWithFocus(source.id)}
               className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-violet-100 dark:border-violet-900 transition ${
                 isSelected
                   ? 'bg-violet-200 dark:bg-violet-900'
