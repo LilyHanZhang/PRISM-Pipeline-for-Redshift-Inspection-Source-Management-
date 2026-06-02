@@ -11,6 +11,21 @@
       ],
       "z_spec": null,
       "notes": ""
+    },
+    "408": {
+      "tags": [
+        "emission",
+        "high-vel"
+      ],
+      "z_spec": null,
+      "notes": ""
+    },
+    "420": {
+      "tags": [
+        "to-be-classified"
+      ],
+      "z_spec": null,
+      "notes": ""
     }
   }
 }

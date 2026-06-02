@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getTagList, addTag, removeTag } from '../utils/api'
 
 const DEFAULT_VOCAB = [
@@ -11,6 +11,12 @@ function TagEditor({ source, onTagsUpdate }) {
   const [showAdd, setShowAdd] = useState(false)
   const [customTag, setCustomTag] = useState('')
   const [vocab, setVocab] = useState(DEFAULT_VOCAB)
+
+  useEffect(() => {
+    setTags(source.tags || [])
+    setShowAdd(false)
+    setCustomTag('')
+  }, [source.id])
 
   const handleAdd = async (tag) => {
     try {
