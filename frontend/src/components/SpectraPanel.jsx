@@ -147,6 +147,8 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
     })
   }
 
+  const range = FILTER_RANGES[filter]
+
   const shapes = [
     {
       type: 'line',
@@ -179,8 +181,6 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
       showarrow: false,
       font: { size: 10, color: '#16a34a' },
     }))
-
-  const range = FILTER_RANGES[filter]
 
   // Calculate y-axis range matching reference code:
   // if has continuum: p95 * 1.25, else: p95 * 1.5
