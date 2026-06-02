@@ -183,17 +183,22 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
     }))
 
   // Calculate y-axis range matching reference code:
-  // if has continuum: p95 * 1.25, else: p95 * 1.5
+  // yMin = np.clip(vmin_zscale * 2.0, -0.035, 0)
+  // yMax = np.clip(tmp_max_counts, 0.015, 1e8)
+  // where tmp_max_counts = p95 * 1.25 (continuum) or p95 * 1.5 (line-only)
+  // vmin_zscale approximated by 5th percentile of 1D flux (since we don't have 2D data here)
   const fluxValues = hasContinuum
     ? spectrum1d.flux.filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
     : (spectrum1d.line || []).filter(f => f !== null && f !== undefined && !isNaN(f) && f !== 0)
   let yRange = null
   if (fluxValues.length > 0) {
     const sorted = [...fluxValues].sort((a, b) => a - b)
+    const p5 = sorted[Math.floor(sorted.length * 0.05)]
     const p95 = sorted[Math.floor(sorted.length * 0.95)]
     const multiplier = hasContinuum ? 1.25 : 1.5
     const tmpMaxCounts = p95 * multiplier
-    const yMin = -0.035
+    const vminApprox = p5
+    const yMin = Math.max(Math.min(vminApprox * 2.0, 0), -0.035)
     const yMax = Math.max(Math.min(tmpMaxCounts, 1e8), 0.015)
     yRange = [yMin, yMax]
   }
@@ -216,7 +221,7 @@ function SpectraPanel({ source, filter, orient, mode = '2d' }) {
             range: [range.min, range.max],
           },
           yaxis: { 
-            title: 'Flux', 
+            title: 'Flux Density [mJy]', 
             gridcolor: '#e5e7eb',
             ...(yRange && { range: yRange }),
           },
