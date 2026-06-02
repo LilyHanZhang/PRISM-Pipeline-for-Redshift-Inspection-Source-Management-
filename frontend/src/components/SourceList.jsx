@@ -39,17 +39,25 @@ function SourceList({ sources, selectedId, onSelect }) {
         />
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
-            {allTags.map(tag => (
-              <span
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`chip chip-violet cursor-pointer ${
-                  activeTags.includes(tag) ? 'bg-violet-200 dark:bg-violet-800' : ''
-                }`}
-              >
-                {tag}
-              </span>
-            ))}
+            {allTags.map(tag => {
+              const isActive = activeTags.includes(tag)
+              return (
+                <span
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`chip cursor-pointer transition-all duration-150 ${
+                    isActive
+                      ? 'bg-violet-600 text-white border-violet-600 dark:bg-violet-500 dark:border-violet-500 shadow-sm scale-105'
+                      : 'chip-violet hover:bg-violet-100 dark:hover:bg-violet-900 opacity-70'
+                  }`}
+                >
+                  {isActive && (
+                    <span className="mr-0.5 text-xs">✓</span>
+                  )}
+                  {tag}
+                </span>
+              )
+            })}
           </div>
         )}
       </div>
