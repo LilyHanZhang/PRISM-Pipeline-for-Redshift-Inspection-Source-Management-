@@ -3,7 +3,7 @@ import re
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from backend import config
-from backend.state import get_merged_catalog, get_source_flags
+from backend.state import get_merged_catalog, get_source_flags, get_tags_db
 
 router = APIRouter(prefix="/api/sources", tags=["sources"])
 
@@ -65,13 +65,20 @@ def build_source_record(row, flags):
             if val is not None:
                 phot_bands[col] = val
 
+    db = get_tags_db()
+    source_data = db.get("sources", {}).get(str(row[id_col]), {})
+    tags = source_data.get("tags", [])
+    z_spec_stored = source_data.get("z_spec", None)
+    if z_spec_stored is not None:
+        z_spec = z_spec_stored
+
     return {
         "id": str(row[id_col]),
         "ra": ra,
         "dec": dec,
         "z_phot": z_phot,
         "z_spec": z_spec,
-        "tags": [],
+        "tags": tags,
         "has_1d": flags.get("has_1d", {}),
         "has_2d": flags.get("has_2d", {}),
         "has_pdf": flags.get("has_pdf", {}),

@@ -495,6 +495,93 @@ class TestDualTraceSpectrum:
         assert result is not None
         assert result['line'] == [15.0, None, 14.0, None]
 
+
+class TestTagPersistence:
+    """Tests for tag persistence across server restarts."""
+
+    def test_tags_saved_and_loaded(self, monkeypatch, tmp_path):
+        """Test that tags are persisted to disk and loaded on restart."""
+        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
+        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
+
+        import backend.config
+        import backend.state
+        importlib.reload(backend.config)
+        importlib.reload(backend.state)
+
+        from backend.state import get_tags_db, save_tags_db
+
+        db = get_tags_db()
+        db["sources"] = {"123": {"tags": ["emission", "galaxy"], "z_spec": None, "notes": ""}}
+        save_tags_db(db)
+
+        importlib.reload(backend.state)
+        reloaded_db = get_tags_db()
+
+        assert reloaded_db["sources"]["123"]["tags"] == ["emission", "galaxy"]
+
+    def test_z_spec_persistence(self, monkeypatch, tmp_path):
+        """Test that z_spec values are persisted."""
+        monkeypatch.setenv("PRISM_DATA_ROOT", str(tmp_path))
+        monkeypatch.setenv("PRISM_FIELD_NAME", "M0416")
+
+        import backend.config
+        import backend.state
+        importlib.reload(backend.config)
+        importlib.reload(backend.state)
+
+        from backend.state import get_tags_db, save_tags_db
+
+        db = get_tags_db()
+        db["sources"] = {"456": {"tags": [], "z_spec": 2.5, "notes": ""}}
+        save_tags_db(db)
+
+        importlib.reload(backend.state)
+        reloaded_db = get_tags_db()
+
+        assert reloaded_db["sources"]["456"]["z_spec"] == 2.5
+
+
+class TestEmptyCutoutHandling:
+    """Tests for empty cutout data handling."""
+
+    def test_apply_scale_empty_array(self):
+        """Test that apply_scale returns None for empty arrays."""
+        from backend.routers.images import apply_scale
+
+        empty_data = np.array([])
+        result = apply_scale(empty_data, "zscale")
+        assert result is None
+
+    def test_apply_scale_empty_2d_array(self):
+        """Test that apply_scale returns None for empty 2D arrays."""
+        from backend.routers.images import apply_scale
+
+        empty_data = np.array([]).reshape(0, 0)
+        result = apply_scale(empty_data, "zscale")
+        assert result is None
+
+    def test_apply_scale_none(self):
+        """Test that apply_scale returns None for None input."""
+        from backend.routers.images import apply_scale
+
+        result = apply_scale(None, "zscale")
+        assert result is None
+
+    def test_generate_no_data_image(self):
+        """Test that _generate_no_data_image returns valid PNG bytes."""
+        import io
+        from PIL import Image
+        from backend.routers.images import _generate_no_data_image
+
+        png_bytes = _generate_no_data_image()
+        assert png_bytes is not None
+        assert len(png_bytes) > 0
+
+        img = Image.open(io.BytesIO(png_bytes))
+        assert img.mode == "RGB"
+        assert img.size == (160, 160)
+
     def test_spectral_lines_in_range_f444w(self):
         """Test that spectral lines can be filtered for F444W range."""
         def getObservedWavelength(restAngstrom, z):

@@ -19,15 +19,24 @@ def apply_scale(data, scale_method):
 
     data = np.array(data, dtype=np.float64)
 
+    if data.size == 0:
+        return None
+
     if scale_method == "zscale":
         from astropy.visualization import ZScaleInterval
         interval = ZScaleInterval()
-        vmin, vmax = interval.get_limits(data)
+        try:
+            vmin, vmax = interval.get_limits(data)
+        except Exception:
+            return None
     elif scale_method == "asinh":
         from astropy.visualization import AsinhStretch, ImageNormalize
         from astropy.visualization import ZScaleInterval
         interval = ZScaleInterval()
-        vmin, vmax = interval.get_limits(data)
+        try:
+            vmin, vmax = interval.get_limits(data)
+        except Exception:
+            return None
         norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch())
         data = norm(data)
         data = np.nan_to_num(data, nan=0.0, posinf=1.0, neginf=0.0)
@@ -84,6 +93,25 @@ def get_source_coords(catalog, source_id):
     return None, None
 
 
+def _generate_no_data_image():
+    """Generate a placeholder 'No Data' image."""
+    img = Image.new("RGB", (160, 160), color=(229, 231, 235))
+    from PIL import ImageDraw, ImageFont
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.load_default()
+    except Exception:
+        font = None
+    bbox = draw.textbbox((0, 0), "No Data", font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    draw.text(((160 - text_w) / 2, (160 - text_h) / 2), "No Data", fill=(156, 163, 175), font=font)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf.read()
+
+
 @router.get("/cutout/{source_id}/{band}")
 def get_cutout(
     source_id: str,
@@ -103,13 +131,16 @@ def get_cutout(
 
     band_path = get_nircam_band_path(band)
     if band_path is None:
-        raise HTTPException(status_code=404, detail=f"Band {band} not found")
+        return Response(content=_generate_no_data_image(), media_type="image/png")
 
     cutout = generate_cutout(band_path, ra, dec, size)
     if cutout is None or cutout.data is None:
-        raise HTTPException(status_code=404, detail="Cutout generation failed")
+        return Response(content=_generate_no_data_image(), media_type="image/png")
 
     scaled = apply_scale(cutout.data, scale)
+    if scaled is None:
+        return Response(content=_generate_no_data_image(), media_type="image/png")
+
     img = apply_cmap(scaled, cmap)
 
     buf = io.BytesIO()
