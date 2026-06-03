@@ -5,28 +5,29 @@ function CoordSearch({ sources, onSelect, onFilter }) {
   const [ra, setRa] = useState('')
   const [dec, setDec] = useState('')
   const [radius, setRadius] = useState(10)
-  const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSearch = async () => {
     if (!ra || !dec) return
     setLoading(true)
+    setError('')
     try {
       const res = await sourcesNear(parseFloat(ra), parseFloat(dec), radius)
-      setResults(res.data)
-      onFilter(res.data.map(r => r.id))
+      onFilter(res.data)
     } catch (e) {
-      setResults([])
+      const msg = e.response?.data?.detail || e.message || 'Search failed'
+      setError(msg)
       onFilter(null)
     }
     setLoading(false)
   }
 
   const handleClear = () => {
-    setResults([])
     setRa('')
     setDec('')
     setRadius(10)
+    setError('')
     onFilter(null)
   }
 
@@ -63,15 +64,16 @@ function CoordSearch({ sources, onSelect, onFilter }) {
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
-        {results.length > 0 && (
-          <button
-            onClick={handleClear}
-            className="text-sm px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            Clear ({results.length} found)
-          </button>
-        )}
+        <button
+          onClick={handleClear}
+          className="text-sm px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          Clear
+        </button>
       </div>
+      {error && (
+        <div className="mt-2 text-sm text-red-500">{error}</div>
+      )}
     </div>
   )
 }

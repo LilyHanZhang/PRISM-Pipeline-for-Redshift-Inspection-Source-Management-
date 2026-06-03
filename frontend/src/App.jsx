@@ -24,7 +24,7 @@ function App() {
   const [showCoordSearch, setShowCoordSearch] = useState(false)
   const [tagsDb, setTagsDb] = useState({})
   const [showOnlySpec, setShowOnlySpec] = useState(true)
-  const [coordFilterIds, setCoordFilterIds] = useState(null)
+  const [coordFilterResults, setCoordFilterResults] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -41,8 +41,13 @@ function App() {
 
   const displaySources = (() => {
     const base = showOnlySpec ? sources : allSources
-    if (coordFilterIds) {
-      return base.filter(s => coordFilterIds.includes(s.id))
+    if (coordFilterResults) {
+      const sepMap = {}
+      coordFilterResults.forEach(r => { sepMap[r.id] = r.separation_arcsec })
+      const idSet = new Set(coordFilterResults.map(r => r.id))
+      const filtered = base.filter(s => idSet.has(s.id))
+      filtered.sort((a, b) => (sepMap[a.id] ?? Infinity) - (sepMap[b.id] ?? Infinity))
+      return filtered
     }
     return base
   })()
@@ -105,7 +110,7 @@ function App() {
 
       {showCoordSearch && (
         <div className="border-b border-gray-200 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-          <CoordSearch sources={displaySources} onSelect={handleSelectSource} onFilter={setCoordFilterIds} />
+          <CoordSearch sources={displaySources} onSelect={handleSelectSource} onFilter={setCoordFilterResults} />
         </div>
       )}
 
