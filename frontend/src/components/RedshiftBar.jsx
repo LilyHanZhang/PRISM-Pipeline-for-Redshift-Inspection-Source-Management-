@@ -73,6 +73,10 @@ function RedshiftBar({ source, onZSpecUpdate }) {
           Δz: {dzIndicator.text}
         </div>
       </div>
+      <div className="flex items-center gap-4 flex-wrap mt-2 text-xs text-pink/50">
+        <span>RA: {source.ra?.toFixed(6) ?? '—'}</span>
+        <span>Dec: {source.dec?.toFixed(6) ?? '—'}</span>
+      </div>
     </div>
   )
 }
