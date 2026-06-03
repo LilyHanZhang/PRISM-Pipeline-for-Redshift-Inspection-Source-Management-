@@ -39,6 +39,8 @@ function SEDPanel({ source }) {
   const waves = []
   const mags = []
   const magErrs = []
+  const fluxes = []
+  const fluxErrs = []
 
   for (const [key, val] of Object.entries(photBands)) {
     if (key.endsWith('_MAG') && !key.endsWith('_MAG_e')) {
@@ -50,6 +52,19 @@ function SEDPanel({ source }) {
         waves.push(wave / 10000)
         mags.push(val)
         magErrs.push(photBands[errKey] || 0)
+
+        // Flux from KRON column (uJy)
+        const kronKey = bandName + '_KRON'
+        const kronVal = photBands[kronKey]
+        const kronErrKey = kronKey + '_e'
+        if (kronVal !== null && kronVal !== undefined) {
+          fluxes.push(kronVal)
+          fluxErrs.push(photBands[kronErrKey] || 0)
+        } else {
+          // Fallback: convert from AB mag
+          fluxes.push(3631 * Math.pow(10, -0.4 * val))
+          fluxErrs.push(fluxes[fluxes.length - 1] * 0.4 * Math.LN10 * (photBands[errKey] || 0) / 2.5)
+        }
       }
     }
   }
@@ -59,8 +74,8 @@ function SEDPanel({ source }) {
   const sortedMags = sorted.map(i => mags[i])
   const sortedErrs = sorted.map(i => magErrs[i])
   const sortedBands = sorted.map(i => bands[i])
-
-  const fluxes = sortedMags.map(m => 3631 * Math.pow(10, -0.4 * m))
+  const sortedFluxes = sorted.map(i => fluxes[i])
+  const sortedFluxErrs = sorted.map(i => fluxErrs[i])
 
   if (bands.length === 0) {
     return (
@@ -89,12 +104,10 @@ function SEDPanel({ source }) {
         data={[
           {
             x: sortedWaves,
-            y: unit === 'flux' ? fluxes : sortedMags,
+            y: unit === 'flux' ? sortedFluxes : sortedMags,
             error_y: {
               type: 'data',
-              array: unit === 'flux'
-                ? fluxes.map((f, i) => f * 0.4 * Math.LN10 * sortedErrs[i] / 2.5)
-                : sortedErrs,
+              array: unit === 'flux' ? sortedFluxErrs : sortedErrs,
               visible: true,
             },
             type: 'scatter',
@@ -115,7 +128,7 @@ function SEDPanel({ source }) {
             title: unit === 'flux' ? 'Flux (µJy)' : 'AB Magnitude',
             gridcolor: gridColor,
             zerolinecolor: gridColor,
-            autorange: unit === 'mag',
+            autorange: unit === 'mag' ? 'reversed' : true,
             font: { color: fontColor },
           },
           paper_bgcolor: 'transparent',

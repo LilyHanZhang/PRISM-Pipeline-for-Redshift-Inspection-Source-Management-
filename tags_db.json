@@ -33,6 +33,14 @@
       ],
       "z_spec": null,
       "notes": ""
+    },
+    "30016": {
+      "tags": [
+        "galaxy",
+        "disk"
+      ],
+      "z_spec": null,
+      "notes": ""
     }
   }
 }

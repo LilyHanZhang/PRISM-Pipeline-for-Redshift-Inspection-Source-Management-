@@ -65,6 +65,13 @@ def build_source_record(row, flags):
             if val is not None:
                 phot_bands[col] = val
 
+    # Add KRON flux values (in uJy)
+    for col in row.colnames:
+        if col.endswith("_KRON") or col.endswith("_KRON_e"):
+            val = _safe_float(row[col])
+            if val is not None:
+                phot_bands[col] = val
+
     db = get_tags_db()
     source_data = db.get("sources", {}).get(str(row[id_col]), {})
     tags = source_data.get("tags", [])
