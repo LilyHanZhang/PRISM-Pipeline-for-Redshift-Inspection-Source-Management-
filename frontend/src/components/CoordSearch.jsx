@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { sourcesNear } from '../utils/api'
 
-function CoordSearch({ sources, onSelect }) {
+function CoordSearch({ sources, onSelect, onFilter }) {
   const [ra, setRa] = useState('')
   const [dec, setDec] = useState('')
   const [radius, setRadius] = useState(10)
@@ -14,10 +14,20 @@ function CoordSearch({ sources, onSelect }) {
     try {
       const res = await sourcesNear(parseFloat(ra), parseFloat(dec), radius)
       setResults(res.data)
+      onFilter(res.data.map(r => r.id))
     } catch (e) {
       setResults([])
+      onFilter(null)
     }
     setLoading(false)
+  }
+
+  const handleClear = () => {
+    setResults([])
+    setRa('')
+    setDec('')
+    setRadius(10)
+    onFilter(null)
   }
 
   return (
@@ -53,39 +63,15 @@ function CoordSearch({ sources, onSelect }) {
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
+        {results.length > 0 && (
+          <button
+            onClick={handleClear}
+            className="text-sm px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Clear ({results.length} found)
+          </button>
+        )}
       </div>
-
-      {results.length > 0 && (
-        <div className="mt-2 max-h-48 overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-1 px-2">ID</th>
-                <th className="text-left py-1 px-2">Sep″</th>
-                <th className="text-left py-1 px-2">z_spec</th>
-                <th className="text-left py-1 px-2">z_phot</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map(r => {
-                const src = sources.find(s => s.id === r.id)
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => onSelect(r.id)}
-                    className="cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950 border-b border-gray-100 dark:border-gray-800"
-                  >
-                    <td className="py-1 px-2 text-violet font-medium">{r.id}</td>
-                    <td className="py-1 px-2">{r.separation_arcsec.toFixed(2)}</td>
-                    <td className="py-1 px-2">{src?.z_spec ?? '—'}</td>
-                    <td className="py-1 px-2">{src?.z_phot ?? '—'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   )
 }

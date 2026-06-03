@@ -24,6 +24,7 @@ function App() {
   const [showCoordSearch, setShowCoordSearch] = useState(false)
   const [tagsDb, setTagsDb] = useState({})
   const [showOnlySpec, setShowOnlySpec] = useState(true)
+  const [coordFilterIds, setCoordFilterIds] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -38,7 +39,13 @@ function App() {
     })
   }, [])
 
-  const displaySources = showOnlySpec ? sources : allSources
+  const displaySources = (() => {
+    const base = showOnlySpec ? sources : allSources
+    if (coordFilterIds) {
+      return base.filter(s => coordFilterIds.includes(s.id))
+    }
+    return base
+  })()
 
   useEffect(() => {
     const theme = darkMode ? 'dark' : 'light'
@@ -98,7 +105,7 @@ function App() {
 
       {showCoordSearch && (
         <div className="border-b border-gray-200 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-          <CoordSearch sources={displaySources} onSelect={handleSelectSource} />
+          <CoordSearch sources={displaySources} onSelect={handleSelectSource} onFilter={setCoordFilterIds} />
         </div>
       )}
 
