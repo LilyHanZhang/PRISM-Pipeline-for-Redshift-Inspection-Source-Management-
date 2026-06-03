@@ -142,6 +142,9 @@ function SourceList({ sources, selectedId, onSelect }) {
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-violet truncate">{source.id}</div>
                 <div className="text-xs text-violet/60">z: {z}</div>
+                <div className="text-xs text-violet/40">
+                  RA: {source.ra?.toFixed(4) ?? '—'} Dec: {source.dec?.toFixed(4) ?? '—'}
+                </div>
               </div>
               <div className="flex gap-1">
                 {source.tags?.slice(0, 2).map(t => (
