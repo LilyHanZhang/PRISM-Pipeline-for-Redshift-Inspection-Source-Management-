@@ -72,6 +72,9 @@ def build_source_record(row, flags):
     if z_spec_stored is not None:
         z_spec = z_spec_stored
 
+    # has_spec_z: source exists in spec catalog (has a z_spec value from spec_cat)
+    has_spec_z = z_spec is not None
+
     return {
         "id": str(row[id_col]),
         "ra": ra,
@@ -85,15 +88,17 @@ def build_source_record(row, flags):
         "has_sed": flags.get("has_sed", False),
         "has_rgb": flags.get("has_rgb", False),
         "has_spec": any(flags.get("has_1d", {}).values()) or any(flags.get("has_2d", {}).values()),
+        "has_spec_z": has_spec_z,
         "phot_bands": phot_bands,
     }
 
 
 @router.get("/")
-def get_sources(has_spec: bool = False):
+def get_sources(has_spec_z: bool = False):
     """Full source list with flags, z values, tags.
 
-    If has_spec=True, only return sources with at least one grism spectrum.
+    If has_spec_z=True, only return sources that exist in the spec catalog
+    (i.e., sources with a spectroscopic redshift).
     """
     catalog = get_merged_catalog()
     if catalog is None:
@@ -105,7 +110,7 @@ def get_sources(has_spec: bool = False):
         sid = str(row[id_col])
         flags = get_source_flags(sid)
         rec = build_source_record(row, flags)
-        if has_spec and not rec["has_spec"]:
+        if has_spec_z and not rec["has_spec_z"]:
             continue
         records.append(rec)
     return records

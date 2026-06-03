@@ -78,7 +78,7 @@ function App() {
             onChange={(e) => setShowOnlySpec(e.target.value === 'spec')}
             className="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
           >
-            <option value="spec">Sources with grism spectra</option>
+            <option value="spec">Sources with spec-z</option>
             <option value="all">All sources</option>
           </select>
           <button

@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: '/api',
 })
 
-export const getSources = (hasSpec = false) => api.get('/sources/', { params: { has_spec: hasSpec } })
+export const getSources = (hasSpecZ = false) => api.get('/sources/', { params: { has_spec_z: hasSpecZ } })
 export const getSource = (id) => api.get(`/sources/${id}`)
 export const searchSources = (q, tag) => api.get('/sources/search', { params: { q, tag } })
 export const sourcesNear = (ra, dec, r) => api.get('/sources/near', { params: { ra, dec, r } })
