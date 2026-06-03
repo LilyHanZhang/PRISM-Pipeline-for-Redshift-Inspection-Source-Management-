@@ -10,10 +10,21 @@ def find_nearby_sources(ra, dec, radius_arcsec, catalog):
         return []
 
     id_col = config.CATALOG_ID_COL
-    ra_col = config.CATALOG_RA_COL
-    dec_col = config.CATALOG_DEC_COL
 
-    if ra_col not in catalog.colnames or dec_col not in catalog.colnames:
+    # Find RA/DEC columns (may be RA_1/DEC_1 after merge, or RA/DEC)
+    ra_col = None
+    for c in [config.CATALOG_RA_COL, "RA_1", "RA"]:
+        if c and c in catalog.colnames:
+            ra_col = c
+            break
+
+    dec_col = None
+    for c in [config.CATALOG_DEC_COL, "DEC_1", "DEC"]:
+        if c and c in catalog.colnames:
+            dec_col = c
+            break
+
+    if ra_col is None or dec_col is None:
         return []
 
     target = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg))

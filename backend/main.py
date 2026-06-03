@@ -1,10 +1,13 @@
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend import config
 from backend.state import init_state
 from backend.routers import sources, spectra, images, pdf, tags, redshift
+
+load_dotenv()
 
 app = FastAPI(title="PRISM", description="Pipeline for Redshift Inspection & Source Management")
 
